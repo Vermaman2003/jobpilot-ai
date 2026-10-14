@@ -1,0 +1,17 @@
+{
+  "name": "JobPilot AI — Intelligent Job Search Platform",
+  "short_name": "JobPilot",
+  "description": "Truthful AI-powered job discovery, resume tailoring, and application tracking platform.",
+  "start_url": "/app/dashboard",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
