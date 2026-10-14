@@ -46,6 +46,13 @@ export interface DashboardStats {
   upcomingFollowUpsCount: number;
 }
 
+export interface DuplicateCheckResult {
+  hasDuplicate: boolean;
+  exactMatch?: Application;
+  sameCompanyMatch?: Application;
+  sameUrlMatch?: Application;
+}
+
 interface AppContextType {
   masterResume: MasterResume;
   updateMasterResume: (resume: MasterResume) => void;
@@ -60,6 +67,7 @@ interface AppContextType {
   updateApplicationStatus: (appId: string, status: ApplicationStatus) => void;
   updateApplicationNotes: (appId: string, notes: string, followUpDate?: string) => void;
   checkDuplicateApplication: (jobId: string) => Application | undefined;
+  checkDuplicateDetails: (job: JobPosting) => DuplicateCheckResult;
   tailoredResumes: Record<string, TailoredResume>;
   tailorResumeForApp: (appId: string) => Promise<TailoredResume>;
   updateTailoredResume: (tailored: TailoredResume) => void;
@@ -196,6 +204,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const checkDuplicateApplication = (jobId: string): Application | undefined => {
     return applications.find((a) => a.jobId === jobId);
+  };
+
+  const checkDuplicateDetails = (job: JobPosting): DuplicateCheckResult => {
+    const exactMatch = applications.find((a) => a.jobId === job.id);
+    const sameUrlMatch = job.applicationUrl
+      ? applications.find(
+          (a) => a.jobId !== job.id && a.job.applicationUrl && a.job.applicationUrl === job.applicationUrl
+        )
+      : undefined;
+    const sameCompanyMatch = applications.find(
+      (a) =>
+        a.jobId !== job.id &&
+        a.job.company.trim().toLowerCase() === job.company.trim().toLowerCase()
+    );
+
+    return {
+      hasDuplicate: Boolean(exactMatch || sameCompanyMatch || sameUrlMatch),
+      exactMatch,
+      sameCompanyMatch,
+      sameUrlMatch,
+    };
   };
 
   const createApplication = (jobId: string): Application => {
@@ -438,6 +467,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateApplicationStatus,
         updateApplicationNotes,
         checkDuplicateApplication,
+        checkDuplicateDetails,
         tailoredResumes,
         tailorResumeForApp,
         updateTailoredResume,

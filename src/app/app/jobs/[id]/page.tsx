@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -21,11 +21,13 @@ import { RelevanceScorer } from '@/lib/scoring/relevance-scorer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
 
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { jobs, masterResume, preferences, createApplication, checkDuplicateApplication } = useApp();
+  const { jobs, masterResume, preferences, createApplication, checkDuplicateDetails } = useApp();
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
   const jobId = params.id as string;
   const job = jobs.find((j) => j.id === jobId);
@@ -45,9 +47,20 @@ export default function JobDetailPage() {
   }
 
   const match = RelevanceScorer.calculateMatch(masterResume, preferences, job);
-  const existingApp = checkDuplicateApplication(job.id);
+  const dupInfo = checkDuplicateDetails(job);
+  const existingApp = dupInfo.exactMatch;
+  const existingCompanyApp = dupInfo.sameCompanyMatch;
+  const existingUrlApp = dupInfo.sameUrlMatch;
 
-  const handleShortlist = () => {
+  const handleShortlistClick = () => {
+    if (existingCompanyApp || existingUrlApp) {
+      setShowDuplicateModal(true);
+    } else {
+      executeShortlist();
+    }
+  };
+
+  const executeShortlist = () => {
     const app = createApplication(job.id);
     router.push(`/app/applications/${app.id}`);
   };
@@ -108,7 +121,7 @@ export default function JobDetailPage() {
               </Button>
             </Link>
           ) : (
-            <Button size="md" variant="primary" onClick={handleShortlist} className="w-full md:w-auto">
+            <Button size="md" variant="primary" onClick={handleShortlistClick} className="w-full md:w-auto">
               <PlusCircle className="w-4 h-4 mr-2" />
               Shortlist & Tailor Resume
             </Button>
@@ -121,6 +134,31 @@ export default function JobDetailPage() {
           </a>
         </div>
       </div>
+
+      {/* Active Pipeline Warning Banner if candidate already applied to this company */}
+      {existingCompanyApp && !existingApp && (
+        <div className="p-4 bg-amber-950/30 border border-amber-800/40 rounded-xl text-xs text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold text-amber-200">
+                Active Application Pipeline at {job.company}
+              </div>
+              <p className="text-slate-300 mt-1 leading-relaxed">
+                You already have an active application for{' '}
+                <strong className="text-white">{existingCompanyApp.job.title}</strong> in stage{' '}
+                <span className="text-amber-300 font-semibold">{existingCompanyApp.status.replace(/_/g, ' ')}</span>.
+                Review company policy regarding multiple concurrent submissions before applying.
+              </p>
+            </div>
+          </div>
+          <Link href={`/app/applications/${existingCompanyApp.id}`} className="shrink-0">
+            <Button size="sm" variant="outline" className="border-amber-700/60 text-amber-200 hover:bg-amber-900/40">
+              View Active Application
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Critical Gap Warning if present */}
       {match.criticalGaps.length > 0 && (
@@ -270,6 +308,51 @@ export default function JobDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Duplicate / Multiple Applications Confirmation Modal */}
+      <Modal
+        isOpen={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        title="Multiple Applications Warning"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-amber-950/40 border border-amber-800/40 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold text-amber-200">Active Pipeline at {job.company}</div>
+              <p className="mt-1 text-slate-300 leading-relaxed">
+                You already have an active application in your pipeline for{' '}
+                <strong className="text-white">{(existingCompanyApp || existingUrlApp)?.job.title}</strong> (Stage:{' '}
+                <span className="text-amber-300 font-semibold">
+                  {(existingCompanyApp || existingUrlApp)?.status.replace(/_/g, ' ')}
+                </span>
+                ).
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Many employers enforce restrictions or cooling-off periods for multiple concurrent submissions. Are you sure you want to shortlist this additional position at {job.company}?
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button size="sm" variant="outline" onClick={() => setShowDuplicateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => {
+                setShowDuplicateModal(false);
+                executeShortlist();
+              }}
+            >
+              Shortlist Anyway
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

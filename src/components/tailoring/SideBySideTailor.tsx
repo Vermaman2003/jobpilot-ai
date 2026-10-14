@@ -12,6 +12,7 @@ import {
   Check,
   X,
   FileText,
+  Loader2,
 } from 'lucide-react';
 import { Application, MasterResume, TailoredResume } from '@/types';
 import { useApp } from '@/context/app-context';
@@ -36,11 +37,47 @@ export const SideBySideTailor: React.FC<SideBySideTailorProps> = ({
   const [activeTab, setActiveTab] = useState<'experiences' | 'projects' | 'gaps'>('experiences');
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [polishingKey, setPolishingKey] = useState<string | null>(null);
 
   // Compute provenance audit
   const audit = React.useMemo(() => {
     return ClaimProvenanceEngine.auditTailoredResume(tailoredResume.provenanceMap);
   }, [tailoredResume]);
+
+  const handleAiPolishBullet = async (expIndex: number, bulletIndex: number) => {
+    const key = `${expIndex}_${bulletIndex}`;
+    setPolishingKey(key);
+    try {
+      const original = tailoredResume.tailoredExperiences[expIndex].bullets[bulletIndex].originalText;
+      const factId = `${tailoredResume.tailoredExperiences[expIndex].experienceId}_bullet_${bulletIndex}`;
+      const apiKey = localStorage.getItem('jobpilot_gemini_api_key') || undefined;
+      const providerType = (localStorage.getItem('jobpilot_ai_provider') as any) || 'DETERMINISTIC';
+
+      const res = await fetch('/api/ai/tailor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          originalBullet: original,
+          targetSkills: tailoredResume.highlightedSkills,
+          jobTitle: application.job.title,
+          company: application.job.company,
+          factId,
+          masterResume,
+          apiKey,
+          providerType,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.tailoredText) {
+        handleEditBullet(expIndex, bulletIndex, data.tailoredText);
+      }
+    } catch (e) {
+      console.error('Error polishing bullet:', e);
+    } finally {
+      setPolishingKey(null);
+    }
+  };
 
   // Handle editing a tailored bullet
   const handleEditBullet = (expIndex: number, bulletIndex: number, newText: string) => {
@@ -276,13 +313,32 @@ export const SideBySideTailor: React.FC<SideBySideTailorProps> = ({
                         <span className="text-[10px] text-slate-400">
                           {bullet.tailoredText === bullet.originalText ? 'Unchanged' : 'Polished'}
                         </span>
-                        <button
-                          onClick={() => handleRevertBullet(expIdx, bIdx)}
-                          className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          Revert to Master
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleAiPolishBullet(expIdx, bIdx)}
+                            disabled={polishingKey === `${expIdx}_${bIdx}`}
+                            className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 disabled:opacity-50"
+                          >
+                            {polishingKey === `${expIdx}_${bIdx}` ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Polishing...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3 h-3" />
+                                AI Polish
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleRevertBullet(expIdx, bIdx)}
+                            className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Revert to Master
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

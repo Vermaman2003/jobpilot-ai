@@ -1,6 +1,5 @@
 'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   MapPin,
@@ -16,6 +15,7 @@ import { useApp } from '@/context/app-context';
 import { RelevanceScorer } from '@/lib/scoring/relevance-scorer';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 export interface JobCardProps {
   job: JobPosting;
@@ -23,13 +23,16 @@ export interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
-  const { masterResume, preferences, createApplication, checkDuplicateApplication } = useApp();
+  const { masterResume, preferences, createApplication, checkDuplicateDetails } = useApp();
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
   const match = React.useMemo(() => {
     return RelevanceScorer.calculateMatch(masterResume, preferences, job);
   }, [masterResume, preferences, job]);
 
-  const existingApp = checkDuplicateApplication(job.id);
+  const dupInfo = checkDuplicateDetails(job);
+  const existingApp = dupInfo.exactMatch;
+  const existingCompanyApp = dupInfo.sameCompanyMatch;
 
   const getScoreVariant = (score: number) => {
     if (score >= 80) return 'success';
@@ -44,9 +47,20 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
         {/* Header & Match Score */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-              {job.company}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+                {job.company}
+              </span>
+              {existingCompanyApp && !existingApp && (
+                <span
+                  className="text-[10px] text-amber-400 bg-amber-950/50 border border-amber-800/40 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium"
+                  title={`Active application at ${job.company}: ${existingCompanyApp.job.title} (${existingCompanyApp.status})`}
+                >
+                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                  Active App at {job.company}
+                </span>
+              )}
+            </div>
             <h3 className="text-base font-semibold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-1 mt-0.5">
               {job.title}
             </h3>
@@ -129,7 +143,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
           <Link href={`/app/applications/${existingApp.id}`}>
             <Button size="sm" variant="outline" className="text-xs">
               <FileCheck className="w-3.5 h-3.5 text-indigo-400" />
-              In Pipeline ({existingApp.status.replace('_', ' ')})
+              In Pipeline ({existingApp.status.replace(/_/g, ' ')})
             </Button>
           </Link>
         ) : (
@@ -138,7 +152,11 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
             variant="primary"
             className="text-xs"
             onClick={() => {
-              createApplication(job.id);
+              if (existingCompanyApp) {
+                setShowDuplicateModal(true);
+              } else {
+                createApplication(job.id);
+              }
             }}
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -146,6 +164,48 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onOpenDetails }) => {
           </Button>
         )}
       </div>
+
+      {/* Duplicate / Multiple Applications Confirmation Modal */}
+      <Modal
+        isOpen={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        title="Multiple Applications Warning"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-amber-950/40 border border-amber-800/40 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold text-amber-200">Active Pipeline at {job.company}</div>
+              <p className="mt-1 text-slate-300 leading-relaxed">
+                You already have an active application in your pipeline for{' '}
+                <strong className="text-white">{existingCompanyApp?.job.title}</strong> (Stage:{' '}
+                <span className="text-amber-300 font-semibold">{existingCompanyApp?.status.replace(/_/g, ' ')}</span>).
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Many employers enforce limits or cooling-off periods for multiple concurrent submissions. Are you sure you want to shortlist this additional position at {job.company}?
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button size="sm" variant="outline" onClick={() => setShowDuplicateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => {
+                createApplication(job.id);
+                setShowDuplicateModal(false);
+              }}
+            >
+              Shortlist Anyway
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

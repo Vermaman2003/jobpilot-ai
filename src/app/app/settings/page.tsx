@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [aiProvider, setAiProvider] = useState<'DETERMINISTIC' | 'GEMINI'>('DETERMINISTIC');
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [apiKeyTested, setApiKeyTested] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [apiKeyTestMessage, setApiKeyTestMessage] = useState<string | null>(null);
+  const [isTestingKey, setIsTestingKey] = useState(false);
   const [savedSettingsNotice, setSavedSettingsNotice] = useState(false);
 
   // Preference fields
@@ -35,18 +37,52 @@ export default function SettingsPage() {
     preferences.excludedCompanies.join(', ')
   );
 
-  const handleTestApiKey = () => {
+  React.useEffect(() => {
+    const savedKey = localStorage.getItem('jobpilot_gemini_api_key');
+    if (savedKey) setGeminiApiKey(savedKey);
+    const savedProvider = localStorage.getItem('jobpilot_ai_provider');
+    if (savedProvider === 'GEMINI' || savedProvider === 'DETERMINISTIC') {
+      setAiProvider(savedProvider);
+    }
+  }, []);
+
+  const handleTestApiKey = async () => {
     if (!geminiApiKey.trim()) {
       setApiKeyTested('ERROR');
+      setApiKeyTestMessage('Please enter a Gemini API key.');
       return;
     }
-    // Simulate testing connection
-    setApiKeyTested('SUCCESS');
-    setTimeout(() => setApiKeyTested('IDLE'), 4000);
+    setIsTestingKey(true);
+    setApiKeyTestMessage(null);
+    try {
+      const res = await fetch('/api/ai/test-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: geminiApiKey }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setApiKeyTested('SUCCESS');
+        setApiKeyTestMessage(data.message || 'Successfully connected to Google Gemini Flash API!');
+        localStorage.setItem('jobpilot_gemini_api_key', geminiApiKey);
+      } else {
+        setApiKeyTested('ERROR');
+        setApiKeyTestMessage(data.message || 'Authentication failed. Please verify your key.');
+      }
+    } catch (err: any) {
+      setApiKeyTested('ERROR');
+      setApiKeyTestMessage(err.message || 'Network error while testing API key.');
+    } finally {
+      setIsTestingKey(false);
+    }
   };
 
   const handleSavePreferences = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('jobpilot_ai_provider', aiProvider);
+    if (geminiApiKey.trim()) {
+      localStorage.setItem('jobpilot_gemini_api_key', geminiApiKey.trim());
+    }
     updatePreferences({
       targetSalary: Number(targetSalary),
       minSalary: Number(minSalary),
@@ -190,7 +226,7 @@ export default function SettingsPage() {
                   placeholder="AIzaSy..."
                   className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
-                <Button variant="outline" size="sm" onClick={handleTestApiKey}>
+                <Button variant="outline" size="sm" onClick={handleTestApiKey} isLoading={isTestingKey}>
                   Test Connection
                 </Button>
               </div>
@@ -198,13 +234,13 @@ export default function SettingsPage() {
               {apiKeyTested === 'SUCCESS' && (
                 <p className="text-xs text-emerald-400 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Gemini API Key format valid and configured.
+                  {apiKeyTestMessage || 'Gemini API connection verified successfully!'}
                 </p>
               )}
               {apiKeyTested === 'ERROR' && (
                 <p className="text-xs text-rose-400 flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Please enter a valid Gemini API key.
+                  {apiKeyTestMessage || 'Authentication failed. Please verify your Gemini API key.'}
                 </p>
               )}
             </div>
