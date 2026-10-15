@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">JobPilot AI</string>
+    <string name="title_activity_main">JobPilot AI</string>
+    <string name="package_name">com.jobpilot.ai</string>
+    <string name="custom_url_scheme">com.jobpilot.ai</string>
+</resources>

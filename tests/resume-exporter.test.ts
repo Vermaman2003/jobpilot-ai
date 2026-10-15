@@ -20,7 +20,7 @@ describe('ResumeExporter', () => {
     expect(pdfBuffer.byteLength).toBeGreaterThan(1000);
 
     // Verify PDF header magic bytes "%PDF-"
-    const header = String.fromCharCode(...pdfBuffer.slice(0, 5));
+    const header = String.fromCharCode(...Array.from(pdfBuffer.slice(0, 5)));
     expect(header).toBe('%PDF-');
   });
 
@@ -34,7 +34,7 @@ describe('ResumeExporter', () => {
 
     const pdfTailored = ResumeExporter.generatePdf(DEFAULT_MASTER_RESUME, tailored);
     expect(pdfTailored.byteLength).toBeGreaterThan(1000);
-    const header = String.fromCharCode(...pdfTailored.slice(0, 5));
+    const header = String.fromCharCode(...Array.from(pdfTailored.slice(0, 5)));
     expect(header).toBe('%PDF-');
   });
 });

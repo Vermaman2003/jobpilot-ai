@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>JobPilot AI — Mobile Application</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#030712">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg-primary: #030712;
+      --bg-card: #111827;
+      --border: #1f2937;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .status-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      font-weight: 600;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .container {
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-box {
+      background: rgba(17, 24, 39, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .job-item {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .job-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .job-company {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .match-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s ease;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+    .btn:active {
+      background: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      color: white;
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: var(--primary);
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(3, 7, 18, 0.95);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      backdrop-filter: blur(12px);
+      z-index: 40;
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+    .nav-tab.active {
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo-badge">✈</div>
+      <div>
+        <div class="brand-title">JobPilot AI</div>
+      </div>
+    </div>
+    <div id="livePill" class="status-pill">Integrated Mobile Data</div>
+  </header>
+
+  <div class="container">
+    <!-- Server Connection Card -->
+    <div class="card" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(30, 58, 138, 0.15);">
+      <div class="card-title">
+        <span>🌐 Cloud & Backend Sync</span>
+        <span class="match-badge">Vercel Ready</span>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+        Connect to your live Vercel deployment or local backend server for real-time synchronization.
+      </p>
+      <input type="text" id="backendUrl" class="input-field" placeholder="https://jobpilot-ai.vercel.app" />
+      <button id="connectBtn" class="btn">Connect to Cloud Backend</button>
+    </div>
+
+    <!-- Candidate Overview Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>👤 Verified Candidate Profile</span>
+        <span class="status-pill">SHA-256 Validated</span>
+      </div>
+      <div style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">Alex Chen</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Full-Stack Software Engineer • 3+ Yrs Relevant Experience</div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+        <span class="match-badge">TypeScript</span>
+        <span class="match-badge">Next.js</span>
+        <span class="match-badge">React</span>
+        <span class="match-badge">Node.js</span>
+        <span class="match-badge">PostgreSQL</span>
+      </div>
+    </div>
+
+    <!-- Live Metrics Grid -->
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-value">12</div>
+        <div class="stat-label">Discovered Jobs</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">5</div>
+        <div class="stat-label">Active Applications</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">92%</div>
+        <div class="stat-label">Top Match Score</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Truthful Provenance</div>
+      </div>
+    </div>
+
+    <!-- Integrated Applications Section -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎯 Active Pipeline</span>
+        <span style="font-size: 12px; color: var(--text-muted);">Real-time</span>
+      </div>
+      <div id="jobList">
+        <div class="job-item">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div class="job-title">Senior Full-Stack Engineer</div>
+              <div class="job-company">Vercel • San Francisco, CA (Remote)</div>
+            </div>
+            <span class="status-pill" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">INTERVIEW</span>
+          </div>
+          <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span class="match-badge">94% Relevance Match</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Tailored Resume Attached</span>
+          </div>
+        </div>
+
+        <div class="job-item">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div class="job-title">Backend Infrastructure Engineer</div>
+              <div class="job-company">Stripe • Seattle, WA (Hybrid)</div>
+            </div>
+            <span class="status-pill">APPLIED</span>
+          </div>
+          <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span class="match-badge">89% Relevance Match</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Cover Letter Generated</span>
+          </div>
+        </div>
+
+        <div class="job-item">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div class="job-title">Staff Software Engineer (AI Systems)</div>
+              <div class="job-company">Supabase • San Francisco, CA</div>
+            </div>
+            <span class="status-pill" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">SHORTLISTED</span>
+          </div>
+          <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span class="match-badge">91% Relevance Match</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Automated Discovery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active">
+      <span style="font-size: 18px;">📊</span>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-tab" onclick="alert('Viewing 12 Discovered Jobs')">
+      <span style="font-size: 18px;">💼</span>
+      <span>Jobs</span>
+    </button>
+    <button class="nav-tab" onclick="alert('Applications Kanban Board Active')">
+      <span style="font-size: 18px;">📋</span>
+      <span>Pipeline</span>
+    </button>
+    <button class="nav-tab" onclick="alert('Tailored Resumes & ATS Exporter Ready')">
+      <span style="font-size: 18px;">📄</span>
+      <span>Resumes</span>
+    </button>
+  </nav>
+
+  <script>
+    const savedUrl = localStorage.getItem('jobpilot_backend_url') || '';
+    const input = document.getElementById('backendUrl');
+    if (savedUrl) {
+      input.value = savedUrl;
+    }
+
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      let url = input.value.trim();
+      if (!url) {
+        alert('Please enter a valid backend or Vercel URL (e.g. https://your-project.vercel.app)');
+        return;
+      }
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      localStorage.setItem('jobpilot_backend_url', url);
+      window.location.href = url;
+    });
+
+    // Auto-redirect if user already connected to their live backend
+    if (savedUrl && !window.location.search.includes('noredirect')) {
+      // Show redirect notification or allow switching
+      console.log('Saved backend available:', savedUrl);
+    }
+  </script>
+</body>
+</html>

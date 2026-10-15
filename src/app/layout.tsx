@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '@/context/app-context';
+import { PwaRegister } from '@/components/layout/PwaRegister';
 
 export const metadata: Metadata = {
   title: 'JobPilot AI — Truthful AI Job Search & Application Platform',
@@ -17,7 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          <PwaRegister />
+          {children}
+        </AppProvider>
       </body>
     </html>
   );
